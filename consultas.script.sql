@@ -9,12 +9,12 @@ SELECT *
 
 
 -- Listar las pistas de más de 4 minutos de duración
-SELECT T.Milliseconds
+SELECT *
   FROM LemonMusic.dbo.Track T
   WHERE T.Milliseconds > 240000;
 
 -- Listar las pistas que tengan entre 2 y 3 minutos de duración
-SELECT T.Milliseconds
+SELECT *
   FROM LemonMusic.dbo.Track T
   WHERE T.Milliseconds BETWEEN 120000 AND 180000;
 
@@ -28,7 +28,7 @@ SELECT AVG(T.Milliseconds)
   FROM LemonMusic.dbo.Track T
 
 -- Listar los clientes (tabla Customer) de USA, Canada y Brazil
-SELECT *
+SELECT C.CustomerId, C.FirstName, C.LastName
   FROM LemonMusic.dbo.Customer C
   WHERE C.Country IN ('Brazil','Canada','USA');
 
@@ -42,21 +42,68 @@ SELECT *
   FROM LemonMusic.dbo.Track T
   WHERE T.Composer LIKE '%Queen%' AND T.Composer LIKE '%David Bowie%';
 
---Listar las pistas de la playlist 'Heavy Metal Classic' id 
+--Listar todo de PlaylistTrak 
 SELECT *
+FROM LemonMusic.dbo.PlaylistTrack PT
+
+--Listar todo de Playlist
+SELECT *
+FROM LemonMusic.dbo.Playlist P
+
+--Listar las pistas de la playlist 'Heavy Metal Classic' id '17'
+SELECT PT.PlaylistId, T.*
 FROM LemonMusic.dbo.PlaylistTrack PT
 INNER JOIN LemonMusic.dbo.Track T ON PT.TrackId = T.TrackId
 WHERE PT.PlaylistId = '17';
 
+--Listar las pistas de la playlist 'Heavy Metal Classic' sin usar id
+SELECT PT.PlaylistId, P.[Name] AS NamePlaylist, T.*
+FROM LemonMusic.dbo.PlaylistTrack PT
+INNER JOIN LemonMusic.dbo.Track T ON PT.TrackId = T.TrackId
+INNER JOIN LemonMusic.dbo.Playlist P ON PT.PlaylistId = P.PlaylistId
+WHERE P.[Name] LIKE 'Heavy Metal Classic';
+
 --Listar las playlist junto con el TrackId de cada pista que contienen
-SELECT *
+SELECT P.*, PT.TrackId
 FROM LemonMusic.dbo.Playlist P
 INNER JOIN LemonMusic.dbo.PlaylistTrack PT ON PT.PlaylistId = P.PlaylistId
 
 --Listar las playlist junto con el número de pistas que contienen
-SELECT PT.PlaylistId, COUNT(PT.TrackId) AS NumberOfTracks
+SELECT PT.PlaylistId, P.[Name] AS PlaylistName, COUNT(PT.TrackId) AS NumberOfTracks
 FROM LemonMusic.dbo.PlaylistTrack PT
-GROUP BY PT.PlaylistId;
+INNER JOIN LemonMusic.dbo.Playlist P ON PT.PlaylistId = P.PlaylistId
+GROUP BY PT.PlaylistId, P.[Name];
+ 
+-- Listar las playlist (sin repetir ninguna) que tienen alguna canción de AC/DC
+SELECT DISTINCT P.PlaylistId, P.[Name] AS NamePlayList
+  FROM LemonMusic.dbo.Track T
+  INNER JOIN LemonMusic.dbo.PlaylistTrack PT ON PT.TrackId = T.TrackId
+  INNER JOIN LemonMusic.dbo.Playlist P ON P.PlaylistId = PT.PlaylistId
+  WHERE T.Composer LIKE '%AC/DC%' 
 
+-- Listar las playlist que tienen alguna canción del artista Queen, junto con la cantidad que tienen
+SELECT   P.PlaylistId, COUNT(*) AS QuantityOfSongs
+  FROM LemonMusic.dbo.Track T
+  INNER JOIN LemonMusic.dbo.PlaylistTrack PT ON PT.TrackId = T.TrackId
+  INNER JOIN LemonMusic.dbo.Playlist P ON P.PlaylistId = PT.PlaylistId
+  WHERE T.Composer LIKE 'Queen' 
+  GROUP BY P.PlaylistId;
+
+-- Listar pistas que no están en ninguna playlist
 SELECT *
-FROM LemonMusic.dbo.PlaylistTrack
+FROM LemonMusic.dbo.Track T
+LEFT JOIN LemonMusic.dbo.PlaylistTrack PT ON PT.TrackId = T.TrackId
+WHERE PT.PlaylistId IS NULL;
+
+-- Listar los artistas que no tienen album
+SELECT A.ArtistId, A.Name AS ArtistName
+FROM LemonMusic.dbo.Artist A
+LEFT JOIN LemonMusic.dbo.Album Al ON A.ArtistId = Al.ArtistId
+WHERE Al.ArtistId IS NULL;
+
+-- Listar los artistas con el número de albums que tienen
+SELECT Ar.ArtistId, Ar.Name AS ArtistName, COUNT(Al.AlbumId) AS AlbumsQuantity
+FROM LemonMusic.dbo.Artist Ar
+LEFT JOIN LemonMusic.dbo.Album Al ON Ar.ArtistId = Al.ArtistId
+GROUP BY Ar.ArtistId, Ar.Name;
+
